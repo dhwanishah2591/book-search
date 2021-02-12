@@ -7,7 +7,7 @@
       placeholder="Search for books to add to your reading list"
       formControlName="term"
     />
-    <button mat-icon-button matSuffix>
+    <button mat-icon-button matSuffix aria-label="Search">
       <mat-icon>search</mat-icon>
     </button>
   </mat-form-field>
@@ -15,7 +15,7 @@
 
 <ng-container *ngIf="searchTerm; else empty">
   <div class="book-grid">
-    <div class="book" data-testing="book-item" *ngFor="let b of books">
+    <div class="book" data-testing="book-item" *ngFor="let b of books$ | async" tabindex="0">
       <div class="book--title">
         {{ b.title }}
       </div>
@@ -27,7 +27,7 @@
           <div><strong>Author:</strong> {{ b.authors.join(',') }}</div>
           <div><strong>Publisher:</strong> {{ b.publisher }}</div>
           <div>
-            <strong>Published:</strong> {{ formatDate(b.publishedDate) }}
+            <strong>Published:</strong> {{ b.publishedDate | date: 'MM/dd/yyyy' }}
           </div>
           <p [innerHTML]="b.description"></p>
           <div>
@@ -48,9 +48,14 @@
 <ng-template #empty>
   <div class="empty">
     <p>
-      Try searching for a topic, for example "<a (click)="searchExample()"
-        >JavaScript</a
-      >".
+      Try searching for a topic, for example
+      <button
+        class="btn-search"
+        (click)="searchExample()"
+        aria-label="Try searching for a topic, for example JavaScript"
+      >
+        JavaScript</button
+      >.
     </p>
   </div>
 </ng-template>
