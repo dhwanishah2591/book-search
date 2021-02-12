@@ -21,9 +21,9 @@
   </mat-drawer-content>
   <mat-drawer #drawer mode="over" position="end">
     <div class="reading-list-container" data-testing="reading-list-container">
-      <h2>
+      <h2 aria-label="My Reading List">
         My Reading List
-        <button mat-icon-button (click)="drawer.close()">
+        <button mat-icon-button (click)="drawer.close()" aria-label="Close My Reading List">
           <mat-icon>close</mat-icon>
         </button>
       </h2>
