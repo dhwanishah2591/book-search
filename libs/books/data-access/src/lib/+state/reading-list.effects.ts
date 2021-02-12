@@ -5,6 +5,9 @@ import { of } from 'rxjs';
 import { catchError, concatMap, exhaustMap, map } from 'rxjs/operators';
 import { ReadingListItem } from '@tmo/shared/models';
 import * as ReadingListActions from './reading-list.actions';
+import { MatSnackBar } from '@angular/material/snack-bar';
+import { Store } from '@ngrx/store';
+import { Action } from '@ngrx/store';
 
 @Injectable()
 export class ReadingListEffects implements OnInitEffects {
@@ -27,9 +30,20 @@ export class ReadingListEffects implements OnInitEffects {
   addBook$ = createEffect(() =>
     this.actions$.pipe(
       ofType(ReadingListActions.addToReadingList),
-      concatMap(({ book }) =>
+      concatMap(({ book, showSnackBar }) =>
         this.http.post('/api/reading-list', book).pipe(
-          map(() => ReadingListActions.confirmedAddToReadingList({ book })),
+          map(() => {
+            if (showSnackBar) {
+              this.openSnackBar(
+                `${book.title} added to reading list`,
+                ReadingListActions.removeFromReadingList({
+                  item: { bookId: book.id, ...book },
+                  showSnackBar: false,
+                })
+              );
+            }
+            return ReadingListActions.confirmedAddToReadingList({ book });
+          }),
           catchError(() =>
             of(ReadingListActions.failedAddToReadingList({ book }))
           )
@@ -41,11 +55,20 @@ export class ReadingListEffects implements OnInitEffects {
   removeBook$ = createEffect(() =>
     this.actions$.pipe(
       ofType(ReadingListActions.removeFromReadingList),
-      concatMap(({ item }) =>
+      concatMap(({ item, showSnackBar }) =>
         this.http.delete(`/api/reading-list/${item.bookId}`).pipe(
-          map(() =>
-            ReadingListActions.confirmedRemoveFromReadingList({ item })
-          ),
+          map(() => {
+            if (showSnackBar) {
+              this.openSnackBar(
+                `${item.title} removed from reading list`,
+                ReadingListActions.addToReadingList({
+                  book: { id: item.bookId, ...item },
+                  showSnackBar: false,
+                })
+              );
+            }
+            return ReadingListActions.confirmedRemoveFromReadingList({ item });
+          }),
           catchError(() =>
             of(ReadingListActions.failedRemoveFromReadingList({ item }))
           )
@@ -54,9 +77,16 @@ export class ReadingListEffects implements OnInitEffects {
     )
   );
 
+  openSnackBar(message: string, action: Action) {
+    const snackBarRef = this.snackBar.open(message, 'Undo', {
+      duration: 5000,
+    });
+    snackBarRef.onAction().subscribe(() => this.store.dispatch(action));
+  }
+
   ngrxOnInitEffects() {
     return ReadingListActions.init();
   }
 
-  constructor(private actions$: Actions, private http: HttpClient) {}
+  constructor(private actions$: Actions, private http: HttpClient, private snackBar: MatSnackBar, private store: Store) {}
 }
